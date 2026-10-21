@@ -1,0 +1,19 @@
+# Core scientific stack (pinned to tested versions for reproducibility)
+numpy==2.4.6
+pandas==3.0.6
+scipy==1.17.1
+scikit-learn==1.9.1
+xgboost==3.2.0
+lightgbm==4.7.0
+networkx==3.6.1
+
+# Plotting
+matplotlib==3.11.2
+seaborn==0.13.2
+
+# Notebook
+jupyter==1.1.1
+notebook==7.6.3
+
+# Note (macOS only): LightGBM/XGBoost need the OpenMP runtime.
+#   brew install libomp
