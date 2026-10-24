@@ -12,7 +12,6 @@ the Kaggle public leaderboard (the test set is strictly future time periods).
 
 - **`notebooks/e1408825.ipynb`** — the end-to-end notebook: raw data → features → temporal
   validation → final model → `submission.csv`. Reproduces the top submission exactly.
-- **`reports/e1408825.md`** — the 4-page report (export to `e1408825.pdf`).
 
 ## Reproduce
 
