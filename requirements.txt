@@ -9,7 +9,6 @@ networkx==3.6.1
 
 # Plotting
 matplotlib==3.11.2
-seaborn==0.13.2
 
 # Notebook
 jupyter==1.1.1

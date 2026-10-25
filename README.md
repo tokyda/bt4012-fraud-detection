@@ -11,7 +11,7 @@ the Kaggle public leaderboard (the test set is strictly future time periods).
 ## Deliverable
 
 - **`notebooks/e1408825.ipynb`** — the end-to-end notebook: raw data → features → temporal
-  validation → final model → `submission.csv`. Reproduces the top submission exactly.
+  validation → final models → the two submission CSVs. Reproduces **both** final submissions exactly.
 
 ## Reproduce
 
@@ -25,7 +25,9 @@ pip install -r requirements.txt
 # 2. Place the competition data in data/raw/
 #    train.csv, test.csv, txs_edgelist.csv, sample_submission.csv
 
-# 3. Run the notebook end-to-end -> writes submissions/submission.csv
+# 3. Run the notebook end-to-end -> writes both final submissions to submissions/:
+#      cand_struct_lgb_xgb.csv  (primary: raw + graph + structural features)
+#      cand_blend_lgb_xgb.csv   (hedge:   raw + graph features only)
 jupyter nbconvert --to notebook --execute --inplace notebooks/e1408825.ipynb
 ```
 

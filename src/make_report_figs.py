@@ -20,19 +20,17 @@ ax2 = ax1.twinx()
 ax2.plot(by.index, by["mean"], color="#C44E52", marker="o", ms=3, label="illicit rate")
 ax2.set_ylabel("illicit rate", color="#C44E52")
 ax1.axvspan(35.5, 35.5, color="k")
-ax1.set_title("Illicit rate and labeled volume by time step (train 1–35)")
 fig.tight_layout(); fig.savefig(OUT / "illicit_by_time.png", dpi=150); plt.close(fig)
 
 # Fig 2: public-LB AUC progression across the model-development journey.
-labels = ["LogReg\n(baseline)", "Random\nForest", "LightGBM", "+XGBoost\nblend",
+labels = ["Competition\nbaseline", "Random\nForest", "LightGBM", "+XGBoost\nblend",
           "+structural\nfeatures"]
-auc = [0.9174, 0.9390, 0.9443, 0.9503, 0.9514]
+auc = [0.9212, 0.9390, 0.9443, 0.9503, 0.9514]
 colors = ["#8C8C8C", "#55A868", "#4C72B0", "#4C72B0", "#C44E52"]
 fig, ax = plt.subplots(figsize=(6.2, 3.0))
 bars = ax.bar(range(len(auc)), auc, color=colors)
 ax.set_xticks(range(len(auc))); ax.set_xticklabels(labels, fontsize=8)
 ax.set_ylim(0.90, 0.96); ax.set_ylabel("public-LB ROC-AUC")
-ax.set_title("Model development (public leaderboard, test steps 36–49)")
 for b, a in zip(bars, auc):
     ax.text(b.get_x() + b.get_width() / 2, a + 0.0015, f"{a:.3f}", ha="center", fontsize=8)
 fig.tight_layout(); fig.savefig(OUT / "lb_progression.png", dpi=150); plt.close(fig)

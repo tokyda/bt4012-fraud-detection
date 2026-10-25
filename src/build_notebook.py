@@ -388,42 +388,54 @@ LB mattered:
   trees and only ~0.4–0.5 rank-correlated — its diversity was noise, so blending it in hurt), heavier
   **regularization**, and recency weighting (within noise). These are reported as negative results.
 
-The final model below reproduces the best submission: a rank-average blend of LightGBM + XGBoost on
-raw + graph + structural features.
+The cells below regenerate **both** submissions selected for the final private leaderboard, each a
+rank-average blend of LightGBM + XGBoost that differs only in the feature set: the primary on
+raw + graph + structural features (`cand_struct_lgb_xgb.csv`), and the hedge on raw + graph features
+only (`cand_blend_lgb_xgb.csv`).
 """))
-cells.append(md("## 5. Final model and submission"))
-cells.append(md("### 5.1 Fit final model on all labeled data and predict test"))
+cells.append(md("## 5. Final models and submissions"))
+cells.append(md("### 5.1 Fit final models on all labeled data and regenerate both submissions"))
 cells.append(code(r"""
-# Tune the LightGBM iteration count on the temporal split (using the full feature set),
-# then refit both learners on ALL labeled rows and rank-average their test predictions.
-m_full = train_lightgbm(tr, va, FULL_COLS)
+# Regenerate BOTH submissions selected for the final private leaderboard. Each is a rank-average
+# blend of LightGBM + XGBoost refit on ALL labeled rows; they differ only in the feature set:
+#   cand_struct_lgb_xgb.csv (primary) -> raw + graph + structural features (FULL_COLS)
+#   cand_blend_lgb_xgb.csv  (hedge)   -> raw + graph features only         (FEAT_COLS)
 y_all = lab["label"].astype(int).values
-params = dict(objective="binary", metric="auc", learning_rate=0.02, num_leaves=64,
-              min_child_samples=50, feature_fraction=0.7, bagging_fraction=0.7, bagging_freq=1,
-              scale_pos_weight=scale_pos_weight(y_all), seed=SEED, verbosity=-1)
-final_lgb = lgb.train(params, lgb.Dataset(lab[FULL_COLS], y_all),
-                      num_boost_round=max(m_full.best_iteration, 100))
-final_xgb = train_xgb(lab, FULL_COLS)
 
-p_test_lgb = final_lgb.predict(test[FULL_COLS])
-p_test_xgb = final_xgb.predict_proba(test[FULL_COLS].fillna(0))[:, 1]
-p_test_blend = rank_average([p_test_lgb, p_test_xgb])
+def fit_blend_and_write(cols, holdout_model, filename):
+    params = dict(objective="binary", metric="auc", learning_rate=0.02, num_leaves=64,
+                  min_child_samples=50, feature_fraction=0.7, bagging_fraction=0.7, bagging_freq=1,
+                  scale_pos_weight=scale_pos_weight(y_all), seed=SEED, verbosity=-1)
+    final_lgb = lgb.train(params, lgb.Dataset(lab[cols], y_all),
+                          num_boost_round=max(holdout_model.best_iteration, 100))
+    final_xgb = train_xgb(lab, cols)
+    p_lgb = final_lgb.predict(test[cols])
+    p_xgb = final_xgb.predict_proba(test[cols].fillna(0))[:, 1]
+    sub = pd.DataFrame({"index": test["index"].values, "target": rank_average([p_lgb, p_xgb])})
+    sub.to_csv(SUB_DIR / filename, index=False)
+    print("wrote", (SUB_DIR / filename).resolve())
+    return sub
 
-submission = pd.DataFrame({"index": test["index"].values, "target": p_test_blend})
-submission.to_csv(SUB_DIR / "submission.csv", index=False)
-print("wrote", (SUB_DIR / "submission.csv").resolve())
+# primary: raw + graph + structural (m_full tunes the iteration count on the temporal holdout)
+m_full = train_lightgbm(tr, va, FULL_COLS)
+submission = fit_blend_and_write(FULL_COLS, m_full, "cand_struct_lgb_xgb.csv")
+
+# hedge: raw + graph only (m_lgb, the FEAT_COLS holdout fit, was trained in section 4)
+submission_hedge = fit_blend_and_write(FEAT_COLS, m_lgb, "cand_blend_lgb_xgb.csv")
+
 submission.head()
 """))
 
 cells.append(md("### 5.2 Validate submission format"))
 cells.append(code(r"""
 samp = pd.read_csv(DATA_DIR / "sample_submission.csv")
-assert list(submission.columns) == ["index", "target"]
-assert len(submission) == len(samp) == 15329
-assert set(submission["index"]) == set(samp["index"]) and submission["index"].is_unique
-assert submission["target"].between(0, 1).all() and submission["target"].notna().all()
-print("submission.csv is valid:", submission.shape,
-      "| target range", (round(submission.target.min(), 4), round(submission.target.max(), 4)))
+for name, sub in [("cand_struct_lgb_xgb.csv", submission), ("cand_blend_lgb_xgb.csv", submission_hedge)]:
+    assert list(sub.columns) == ["index", "target"]
+    assert len(sub) == len(samp) == 15329
+    assert set(sub["index"]) == set(samp["index"]) and sub["index"].is_unique
+    assert sub["target"].between(0, 1).all() and sub["target"].notna().all()
+    print(f"{name} valid:", sub.shape, "| target range",
+          (round(sub.target.min(), 4), round(sub.target.max(), 4)))
 """))
 
 cells.append(md(r"""
